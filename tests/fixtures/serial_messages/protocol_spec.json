@@ -1,0 +1,44 @@
+{
+  "protocol_version": 1,
+  "messages": {
+    "device_to_host": {
+      "key_press": {
+        "type": "key_press",
+        "key": "integer (1-9)"
+      },
+      "key_release": {
+        "type": "key_release",
+        "key": "integer (1-9)"
+      },
+      "ready": {
+        "type": "ready",
+        "protocol": "integer",
+        "firmware": "string (semver)",
+        "keys": "integer"
+      },
+      "heartbeat": {
+        "type": "heartbeat"
+      }
+    },
+    "host_to_device": {
+      "ack": {
+        "type": "ack",
+        "profile": "string"
+      },
+      "profile_changed": {
+        "type": "profile_changed",
+        "name": "string",
+        "display_name": "string"
+      }
+    }
+  },
+  "framing": {
+    "format": "JSON",
+    "delimiter": "\\n",
+    "encoding": "UTF-8"
+  },
+  "key_numbering": {
+    "range": [1, 9],
+    "layout": "3x3 grid, left-to-right top-to-bottom"
+  }
+}
