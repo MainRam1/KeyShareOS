@@ -1,0 +1,114 @@
+import Foundation
+
+/// A single step in a macro: either an action or a delay.
+struct MacroStepModel: Identifiable {
+    let id: UUID
+    var isDelay: Bool
+    var delayMs: Int
+    var actionType: String
+    // keyboard_shortcut
+    var useCmd: Bool = false
+    var useShift: Bool = false
+    var useCtrl: Bool = false
+    var useAlt: Bool = false
+    var shortcutKey: String = ""
+    // app_launch
+    var bundleID: String = ""
+    var appName: String = ""
+    // text_type
+    var typeText: String = ""
+    var typeMethod: String = "clipboard"
+    // desktop_switch
+    var switchDirection: String = "left"
+    // media_control
+    var mediaAction: String = "play_pause"
+
+    init(id: UUID = UUID(), isDelay: Bool, delayMs: Int, actionType: String) {
+        self.id = id
+        self.isDelay = isDelay
+        self.delayMs = delayMs
+        self.actionType = actionType
+    }
+
+    static func newDelay() -> MacroStepModel {
+        MacroStepModel(isDelay: true, delayMs: 200, actionType: "")
+    }
+
+    static func newAction() -> MacroStepModel {
+        MacroStepModel(isDelay: false, delayMs: 0, actionType: "keyboard_shortcut")
+    }
+
+    func toStepDict() -> [String: Any] {
+        if isDelay {
+            return ["delay_ms": delayMs]
+        }
+
+        switch actionType {
+        case "keyboard_shortcut":
+            var mods: [String] = []
+            if useCmd { mods.append("cmd") }
+            if useShift { mods.append("shift") }
+            if useCtrl { mods.append("ctrl") }
+            if useAlt { mods.append("alt") }
+            return ["action": "keyboard_shortcut", "params": ["modifiers": mods, "key": shortcutKey]]
+        case "app_launch":
+            var params: [String: Any] = ["bundle_id": bundleID]
+            if !appName.isEmpty {
+                params["app_name"] = appName
+            }
+            return ["action": "app_launch", "params": params]
+        case "text_type":
+            return ["action": "text_type", "params": ["text": typeText, "method": typeMethod]]
+        case "desktop_switch":
+            return ["action": "desktop_switch", "params": ["direction": switchDirection]]
+        case "media_control":
+            return ["action": "media_control", "params": ["action": mediaAction]]
+        default:
+            return ["action": actionType, "params": [String: Any]()]
+        }
+    }
+
+    init(from dict: [String: Any]) {
+        self.id = UUID()
+
+        if let delayValue = dict["delay_ms"] {
+            self.isDelay = true
+            self.actionType = ""
+            if let intVal = delayValue as? Int {
+                self.delayMs = intVal
+            } else if let doubleVal = delayValue as? Double {
+                self.delayMs = Int(doubleVal)
+            } else {
+                self.delayMs = 200
+            }
+            return
+        }
+
+        self.isDelay = false
+        self.delayMs = 0
+        self.actionType = dict["action"] as? String ?? "keyboard_shortcut"
+        let params = dict["params"] as? [String: Any] ?? [:]
+
+        switch actionType {
+        case "keyboard_shortcut":
+            let mods = params["modifiers"] as? [String] ?? []
+            self.useCmd = mods.contains("cmd")
+            self.useShift = mods.contains("shift")
+            self.useCtrl = mods.contains("ctrl")
+            self.useAlt = mods.contains("alt")
+            self.shortcutKey = params["key"] as? String ?? ""
+        case "app_launch":
+            self.bundleID = params["bundle_id"] as? String ?? ""
+            self.appName = params["app_name"] as? String ?? ""
+        case "text_type":
+            self.typeText = params["text"] as? String ?? ""
+            self.typeMethod = params["method"] as? String ?? "clipboard"
+        case "desktop_switch":
+            self.switchDirection = params["direction"] as? String ?? "left"
+        case "media_control":
+            self.mediaAction = params["action"] as? String ?? "play_pause"
+        default:
+            break
+        }
+    }
+}
