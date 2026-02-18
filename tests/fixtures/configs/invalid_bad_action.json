@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "active_profile": "general",
+  "profiles": {
+    "general": {
+      "display_name": "General",
+      "keys": {
+        "1": { "action": "totally_invalid_action_type", "params": {} },
+        "2": { "action": "none", "params": {} },
+        "3": { "action": "none", "params": {} },
+        "4": { "action": "none", "params": {} },
+        "5": { "action": "none", "params": {} },
+        "6": { "action": "none", "params": {} },
+        "7": { "action": "none", "params": {} },
+        "8": { "action": "none", "params": {} },
+        "9": { "action": "none", "params": {} }
+      }
+    }
+  },
+  "auto_switch": {},
+  "settings": {
+    "launch_at_login": false,
+    "show_osd": true
+  }
+}

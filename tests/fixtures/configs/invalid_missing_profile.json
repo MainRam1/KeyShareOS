@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "active_profile": "nonexistent",
+  "profiles": {
+    "general": {
+      "display_name": "General",
+      "keys": {
+        "1": { "action": "none", "params": {} }
+      }
+    }
+  },
+  "auto_switch": {},
+  "settings": {
+    "launch_at_login": false,
+    "show_osd": true
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "active_profile": "all_actions",
+  "profiles": {
+    "all_actions": {
+      "display_name": "All Actions",
+      "keys": {
+        "1": {
+          "action": "keyboard_shortcut",
+          "params": { "modifiers": ["cmd"], "key": "c" }
+        },
+        "2": {
+          "action": "keyboard_shortcut",
+          "params": { "modifiers": ["cmd", "shift"], "key": "z" }
+        },
+        "3": {
+          "action": "app_launch",
+          "params": { "bundle_id": "com.apple.Terminal" }
+        },
+        "4": {
+          "action": "text_type",
+          "params": { "text": "Hello World", "method": "clipboard" }
+        },
+        "5": {
+          "action": "text_type",
+          "params": { "text": "typed", "method": "keystroke" }
+        },
+        "6": {
+          "action": "media_control",
+          "params": { "action": "play_pause" }
+        },
+        "7": {
+          "action": "media_control",
+          "params": { "action": "vol_up" }
+        },
+        "8": {
+          "action": "desktop_switch",
+          "params": { "direction": "left" }
+        },
+        "9": {
+          "action": "desktop_switch",
+          "params": { "desktop": 2 }
+        }
+      }
+    }
+  },
+  "auto_switch": {
+    "com.apple.dt.Xcode": "all_actions"
+  },
+  "settings": {
+    "launch_at_login": false,
+    "show_osd": true
+  }
+}
