@@ -1,0 +1,37 @@
+[project]
+name = "macro-firmware"
+version = "0.1.0"
+
+[project.optional-dependencies]
+test = ["pytest>=7.0", "pytest-cov>=4.0"]
+lint = ["pylint>=3.0", "mypy>=1.0"]
+
+[tool.pylint.format]
+max-line-length = 99
+max-module-lines = 300
+
+[tool.pylint.design]
+max-args = 5
+max-locals = 10
+
+[tool.pylint.similarities]
+min-similarity-lines = 4
+ignore-comments = true
+ignore-docstrings = true
+
+[tool.pylint.messages_control]
+disable = ["import-error", "no-member", "too-few-public-methods"]
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+check_untyped_defs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["board", "digitalio", "keypad", "usb_cdc", "supervisor", "microcontroller"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"

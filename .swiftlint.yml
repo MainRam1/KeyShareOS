@@ -1,0 +1,48 @@
+included:
+  - MacroApp/KeyShare
+excluded:
+  - MacroApp/KeyShare.xcodeproj
+  - MacroApp/KeyShareTests
+
+opt_in_rules:
+  - identical_operands
+  - redundant_type_annotation
+  - redundant_nil_coalescing
+  - duplicate_imports
+  - fatal_error_message
+  - force_unwrapping
+  - closure_body_length
+  - function_parameter_count
+  - sorted_imports
+
+file_length:
+  warning: 400
+  error: 600
+
+type_body_length:
+  warning: 250
+  error: 400
+
+function_body_length:
+  warning: 40
+  error: 80
+
+cyclomatic_complexity:
+  warning: 10
+  error: 15
+
+custom_rules:
+  no_direct_cgEvent_outside_actions:
+    name: "CGEvent only in Actions/"
+    regex: "CGEvent\\("
+    message: "CGEvent creation should only happen in Actions/ files"
+    severity: warning
+    included: "MacroApp/KeyShare/(?!Actions/).*\\.swift"
+
+  no_hardcoded_config_path:
+    name: "Use Constants for file paths"
+    regex: "Application Support.*Macro"
+    match_kinds:
+      - string
+    message: "Use Constants.configDirectory instead of hardcoded paths"
+    severity: error

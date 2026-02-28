@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  firmware-tests:
+    name: Firmware Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install pytest
+      - name: Run firmware tests
+        run: python -m pytest tests/firmware/ -v
+
+  swift-build-test:
+    name: Swift Build & Test
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install xcodegen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        working-directory: MacroApp
+        run: xcodegen generate
+      - name: Build
+        working-directory: MacroApp
+        run: xcodebuild build -scheme KeyShare CODE_SIGNING_ALLOWED=NO -quiet
+      - name: Test
+        working-directory: MacroApp
+        run: xcodebuild test -scheme KeyShare -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO
+
+  swift-lint:
+    name: SwiftLint
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SwiftLint
+        run: brew install swiftlint
+      - name: Lint
+        run: swiftlint lint --config .swiftlint.yml --strict
+
+  config-validation:
+    name: Config Fixture Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JSON fixtures
+        run: |
+          for f in tests/fixtures/configs/*.json tests/fixtures/serial_messages/*.json; do
+            echo "Validating $f..."
+            python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f"
+          done
+          echo "All JSON fixtures valid."
