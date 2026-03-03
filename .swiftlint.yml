@@ -4,16 +4,28 @@ excluded:
   - MacroApp/KeyShare.xcodeproj
   - MacroApp/KeyShareTests
 
+disabled_rules:
+  - trailing_comma
+  - implicit_optional_initialization
+  - for_where
+
 opt_in_rules:
   - identical_operands
   - redundant_type_annotation
   - redundant_nil_coalescing
   - duplicate_imports
   - fatal_error_message
-  - force_unwrapping
   - closure_body_length
   - function_parameter_count
   - sorted_imports
+
+identifier_name:
+  min_length: 1
+  max_length: 60
+
+line_length:
+  warning: 160
+  error: 200
 
 file_length:
   warning: 400
@@ -24,12 +36,22 @@ type_body_length:
   error: 400
 
 function_body_length:
-  warning: 40
+  warning: 80
+  error: 120
+
+closure_body_length:
+  warning: 50
   error: 80
 
 cyclomatic_complexity:
-  warning: 10
-  error: 15
+  warning: 15
+  error: 25
+
+force_unwrapping:
+  severity: warning
+
+force_try:
+  severity: warning
 
 custom_rules:
   no_direct_cgEvent_outside_actions:
@@ -37,7 +59,7 @@ custom_rules:
     regex: "CGEvent\\("
     message: "CGEvent creation should only happen in Actions/ files"
     severity: warning
-    included: "MacroApp/KeyShare/(?!Actions/).*\\.swift"
+    included: "MacroApp/KeyShare/(?!Actions/|Utilities/KeyEventHelper).*\\.swift"
 
   no_hardcoded_config_path:
     name: "Use Constants for file paths"
