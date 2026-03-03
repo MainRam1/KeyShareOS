@@ -89,11 +89,10 @@ enum SerialProtocol {
             dict = ["type": "profile_changed", "name": name, "display_name": displayName]
         }
 
-        // JSONSerialization is used here (not JSONEncoder) because we're working
-        // with [String: Any] dictionaries matching the protocol spec, not Codable types.
-        // Codable types for the config schema live in ConfigSchema.swift.
-        var data = try! JSONSerialization.data(withJSONObject: dict)
-        data.append(0x0A) // newline terminator
+        guard var data = try? JSONSerialization.data(withJSONObject: dict) else {
+            return Data()
+        }
+        data.append(0x0A)
         return data
     }
 }
