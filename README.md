@@ -1,6 +1,6 @@
 # Macro
 
-A 9-key macropad built with a Raspberry Pi Pico and a macOS companion app. Assign keyboard shortcuts, launch apps, type text, switch desktops, control media, or chain actions into macros -- all from a compact 3x3 key grid.
+An open-source 9-key programmable macropad built from the ground up — custom PCB designed in KiCad, CircuitPython firmware running on the RP2040, and a native macOS companion app written in Swift. Assign keyboard shortcuts, launch apps, type text, switch desktops, control media, open URLs, or chain actions into multi-step macros — all from a compact 3x3 mechanical key grid that auto-switches profiles based on your active application.
 
 ## Features
 
@@ -13,6 +13,11 @@ A 9-key macropad built with a Raspberry Pi Pico and a macOS companion app. Assig
 - **Hot-plug support** -- detects device connect/disconnect and recovers after sleep
 - **Config file watching** -- edits made in a text editor are picked up immediately
 - **Profile import/export** -- share profiles as JSON files
+- **Custom PCB** -- open-source KiCad design with manufacturing-ready Gerber files
+
+## How It Works
+
+Press a Cherry MX key on the macropad → the RP2040 firmware sends a JSON message over USB serial → the macOS menu bar app receives it and executes the configured action. The app monitors your active application and automatically switches profiles, so your keys always match what you're working in. A bidirectional serial protocol handles device detection, hot-plug recovery, and sleep/wake reconnection.
 
 ## Requirements
 
@@ -22,6 +27,16 @@ A 9-key macropad built with a Raspberry Pi Pico and a macOS companion app. Assig
 | Microcontroller | Raspberry Pi Pico (RP2040) |
 | Switches | 9 x Cherry MX compatible |
 | Firmware runtime | CircuitPython 9.x |
+
+## Hardware
+
+The `Hardware/` directory contains the complete KiCad project for a custom 2-layer PCB:
+
+- **Schematic & PCB layout** -- KiCad 9.0 project files
+- **Gerber files** -- manufacturing-ready, located in `Hardware/Gerbers/`
+- **BOM** -- `Hardware/MacroPad.csv` with all components listed
+
+Key components: RP2040 microcontroller, W25Q16 16Mbit SPI flash, USB-C connector with ESD protection, AP2112K-3.3 voltage regulator, and 9 Cherry MX compatible switch footprints.
 
 ## Quick Start
 
