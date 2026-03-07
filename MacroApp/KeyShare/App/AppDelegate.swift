@@ -25,6 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ActionRegistry.shared.register(TextTypeAction())
         ActionRegistry.shared.register(DesktopSwitchAction())
         ActionRegistry.shared.register(MediaControlAction())
+        ActionRegistry.shared.register(URLOpenAction())
         ActionRegistry.shared.register(MacroAction())
 
         Log.general.info("Registered action types: \(ActionRegistry.shared.registeredTypes.joined(separator: ", "))")

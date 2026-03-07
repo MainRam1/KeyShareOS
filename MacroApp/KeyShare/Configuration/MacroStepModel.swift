@@ -22,6 +22,7 @@ struct MacroStepModel: Identifiable {
     var switchDirection: String = "left"
     // media_control
     var mediaAction: String = "play_pause"
+    var urlString: String = ""
 
     init(id: UUID = UUID(), isDelay: Bool, delayMs: Int, actionType: String) {
         self.id = id
@@ -63,6 +64,8 @@ struct MacroStepModel: Identifiable {
             return ["action": "desktop_switch", "params": ["direction": switchDirection]]
         case "media_control":
             return ["action": "media_control", "params": ["action": mediaAction]]
+        case "open_url":
+            return ["action": "open_url", "params": ["url": urlString]]
         default:
             return ["action": actionType, "params": [String: Any]()]
         }
@@ -107,6 +110,8 @@ struct MacroStepModel: Identifiable {
             self.switchDirection = params["direction"] as? String ?? "left"
         case "media_control":
             self.mediaAction = params["action"] as? String ?? "play_pause"
+        case "open_url":
+            self.urlString = params["url"] as? String ?? ""
         default:
             break
         }

@@ -55,6 +55,9 @@ struct ActionStepRow: View {
             desktopSwitchParams
         case "media_control":
             mediaControlParams
+        case "open_url":
+            TextField("URL", text: $step.urlString)
+                .textFieldStyle(.roundedBorder)
         default:
             EmptyView()
         }

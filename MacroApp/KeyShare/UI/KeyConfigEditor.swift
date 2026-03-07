@@ -43,6 +43,8 @@ struct KeyConfigEditor: View {
     // media_control params
     @State private var mediaAction = "play_pause"
 
+    @State private var urlString = ""
+
     // display name (all action types)
     @State private var displayName = ""
 
@@ -82,6 +84,8 @@ struct KeyConfigEditor: View {
                     desktopSwitchParams
                 case "media_control":
                     mediaControlParams
+                case "open_url":
+                    urlOpenParams
                 case "macro":
                     MacroStepEditor(steps: $macroSteps)
                 default:
@@ -183,6 +187,32 @@ struct KeyConfigEditor: View {
         }
     }
 
+    @ViewBuilder
+    private var urlOpenParams: some View {
+        Section("URL") {
+            TextField("URL", text: $urlString)
+                .textFieldStyle(.roundedBorder)
+
+            if !urlString.isEmpty {
+                if isValidWebURL(urlString) {
+                    Label("Valid URL", systemImage: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                        .font(.caption)
+                } else {
+                    Label("Must start with http:// or https://", systemImage: "exclamationmark.triangle.fill")
+                        .foregroundColor(.red)
+                        .font(.caption)
+                }
+            }
+        }
+    }
+
+    private func isValidWebURL(_ string: String) -> Bool {
+        guard let url = URL(string: string),
+              let scheme = url.scheme?.lowercased() else { return false }
+        return scheme == "http" || scheme == "https"
+    }
+
     // MARK: - Load / Save
 
     private func loadCurrentBinding() {
@@ -210,6 +240,8 @@ struct KeyConfigEditor: View {
             switchDirection = binding.params["direction"]?.stringValue ?? "left"
         case "media_control":
             mediaAction = binding.params["action"]?.stringValue ?? "play_pause"
+        case "open_url":
+            urlString = binding.params["url"]?.stringValue ?? ""
         case "macro":
             if let stepsArray = binding.params["steps"]?.anyValue as? [[String: Any]] {
                 macroSteps = stepsArray.map { MacroStepModel(from: $0) }
@@ -248,6 +280,8 @@ struct KeyConfigEditor: View {
             params = ["direction": AnyCodable(switchDirection)]
         case "media_control":
             params = ["action": AnyCodable(mediaAction)]
+        case "open_url":
+            params = ["url": AnyCodable(urlString)]
         case "macro":
             params = ["steps": AnyCodable(macroSteps.map { $0.toStepDict() })]
         default:

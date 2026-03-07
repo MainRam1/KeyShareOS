@@ -38,8 +38,9 @@
           "params": { "direction": "left" }
         },
         "9": {
-          "action": "desktop_switch",
-          "params": { "desktop": 2 }
+          "action": "open_url",
+          "label": "GitHub",
+          "params": { "url": "https://github.com" }
         }
       }
     }

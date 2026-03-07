@@ -213,6 +213,10 @@ struct KeyButton: View {
         case "media_control":
             let act = binding.params["action"]?.stringValue ?? "?"
             return act.replacingOccurrences(of: "_", with: " ").capitalized
+        case "open_url":
+            let url = binding.params["url"]?.stringValue ?? ""
+            let display = url.count > 25 ? String(url.prefix(25)) + "..." : url
+            return display.isEmpty ? "Open URL" : display
         case "macro":
             return "Macro"
         default:
