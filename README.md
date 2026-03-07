@@ -4,7 +4,7 @@ A 9-key macropad built with a Raspberry Pi Pico and a macOS companion app. Assig
 
 ## Features
 
-- **6 action types** -- keyboard shortcuts, app launch, text typing, desktop switching, media control, multi-step macros
+- **7 action types** -- keyboard shortcuts, app launch, text typing, desktop switching, media control, multi-step macros, open url
 - **Unlimited profiles** -- organize keys by task or project
 - **Auto-switch** -- profiles change automatically based on the active application
 - **Visual key editor** -- drag-and-drop 3x3 grid in the preferences window
