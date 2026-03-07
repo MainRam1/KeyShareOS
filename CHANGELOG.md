@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - 9-key macropad firmware (CircuitPython) with USB serial communication
 - macOS companion app (menu bar utility)
-- 6 action types: keyboard shortcuts, app launch, text typing, desktop switching, media control, macros
+- 7 action types: keyboard shortcuts, app launch, text typing, desktop switching, media control, macros, open url
 - Profile system with unlimited profiles
 - Auto-switch profiles by active application
 - Visual 3x3 key grid editor in preferences
