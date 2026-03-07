@@ -29,6 +29,11 @@ xcuserdata/
 *.log
 config_test.json
 
+# KiCad
+*.lck
+fp-info-cache
+*-backups/
+
 # Node
 node_modules/
 
