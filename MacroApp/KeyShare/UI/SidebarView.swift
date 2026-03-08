@@ -1,13 +1,11 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 enum SidebarTab: Hashable {
     case keys
     case settings
 }
 
-// MARK: - SidebarView
-
-/// Profile list + navigation tabs.
 struct SidebarView: View {
     @ObservedObject var profileManager: ProfileManager
     @ObservedObject var configManager: ConfigManager
@@ -18,6 +16,9 @@ struct SidebarView: View {
     @State private var newDisplayName = ""
     @State private var errorMessage = ""
     @State private var showingError = false
+    @State private var draggedProfile: String?
+    @State private var hoveredProfile: String?
+    @State private var renamingProfile: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -39,11 +40,8 @@ struct SidebarView: View {
         }
     }
 
-    // MARK: - Profile Section
-
     private var profileSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header
             HStack {
                 Text("Profiles")
                     .font(UIConstants.sectionHeaderFont)
@@ -65,17 +63,37 @@ struct SidebarView: View {
             .padding(.top, UIConstants.sidebarPadding)
             .padding(.bottom, UIConstants.itemSpacing)
 
-            // Profile list
             ScrollView {
                 VStack(spacing: UIConstants.itemSpacing) {
                     ForEach(profileManager.availableProfiles, id: \.self) { name in
                         let displayName = configManager.config.profiles[name]?.displayName ?? name
                         let isActive = name == profileManager.activeProfile
 
-                        SidebarProfileItem(name: displayName, isActive: isActive) {
-                            try? profileManager.switchProfile(to: name)
-                        }
+                        SidebarProfileItem(
+                            name: displayName,
+                            isActive: isActive,
+                            isDropTarget: hoveredProfile == name,
+                            isEditing: renamingProfile == name,
+                            action: {
+                                try? profileManager.switchProfile(to: name)
+                            },
+                            onRename: { newName in
+                                try? profileManager.renameProfile(name, displayName: newName)
+                                renamingProfile = nil
+                            },
+                            onStartEditing: {
+                                renamingProfile = name
+                            },
+                            onCancelEditing: {
+                                renamingProfile = nil
+                            }
+                        )
                         .contextMenu {
+                            Button {
+                                renamingProfile = name
+                            } label: {
+                                Label("Rename", systemImage: "pencil")
+                            }
                             if !isActive {
                                 Button(role: .destructive) {
                                     try? profileManager.deleteProfile(name: name)
@@ -84,14 +102,28 @@ struct SidebarView: View {
                                 }
                             }
                         }
+                        .onDrag {
+                            draggedProfile = name
+                            return NSItemProvider(object: name as NSString)
+                        }
+                        .onDrop(
+                            of: [.plainText],
+                            delegate: ProfileSwapDropDelegate(
+                                targetProfile: name,
+                                draggedProfile: $draggedProfile,
+                                hoveredProfile: $hoveredProfile,
+                                onReorder: { source, target in
+                                    try? profileManager.moveProfile(from: source, to: target)
+                                }
+                            )
+                        )
+                        .opacity(draggedProfile == name ? 0.4 : 1.0)
                     }
                 }
                 .padding(.horizontal, UIConstants.sidebarPadding)
             }
         }
     }
-
-    // MARK: - Tab Section
 
     private var tabSection: some View {
         VStack(spacing: UIConstants.itemSpacing) {
@@ -113,8 +145,6 @@ struct SidebarView: View {
         }
         .padding(.horizontal, UIConstants.sidebarPadding)
     }
-
-    // MARK: - Add Profile Popover
 
     private var addProfilePopover: some View {
         VStack(alignment: .leading, spacing: UIConstants.itemSpacing) {
@@ -145,8 +175,6 @@ struct SidebarView: View {
         .frame(width: 260)
     }
 
-    // MARK: - Actions
-
     private func addProfile() {
         let display = newDisplayName.isEmpty ? newProfileName : newDisplayName
         do {
@@ -159,32 +187,67 @@ struct SidebarView: View {
     }
 }
 
-// MARK: - SidebarProfileItem
-
 struct SidebarProfileItem: View {
     let name: String
     let isActive: Bool
+    let isDropTarget: Bool
+    let isEditing: Bool
     let action: () -> Void
+    var onRename: ((String) -> Void)?
+    var onStartEditing: (() -> Void)?
+    var onCancelEditing: (() -> Void)?
 
     @State private var isHovered = false
+    @State private var editText = ""
 
     var body: some View {
-        Button(action: action) {
-            HStack {
-                Text(name)
+        HStack {
+            if isEditing {
+                TextField("", text: $editText, onCommit: commitRename)
+                    .textFieldStyle(.plain)
                     .font(UIConstants.sidebarItemFont)
-                    .lineLimit(1)
-                Spacer()
+                    .onExitCommand { cancelRename() }
+                    .onAppear { editText = name }
+            } else {
+                Button(action: action) {
+                    HStack {
+                        Text(name)
+                            .font(UIConstants.sidebarItemFont)
+                            .lineLimit(1)
+                        Spacer()
+                    }
+                }
+                .buttonStyle(.plain)
             }
-            .padding(.horizontal, UIConstants.sidebarPadding)
-            .frame(maxWidth: .infinity, minHeight: UIConstants.sidebarItemHeight, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: UIConstants.sidebarItemCornerRadius, style: .continuous)
-                    .fill(itemBackground)
-            )
+            Spacer()
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, UIConstants.sidebarPadding)
+        .frame(maxWidth: .infinity, minHeight: UIConstants.sidebarItemHeight, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: UIConstants.sidebarItemCornerRadius, style: .continuous)
+                .fill(itemBackground)
+        )
+        .scaleEffect(isDropTarget ? 1.05 : 1.0)
+        .shadow(
+            color: isDropTarget ? .accentColor.opacity(0.4) : .clear,
+            radius: isDropTarget ? 8 : 0
+        )
+        .animation(.easeInOut(duration: 0.15), value: isDropTarget)
         .onHover { isHovered = $0 }
+        .onTapGesture(count: 2) { onStartEditing?() }
+    }
+
+    private func commitRename() {
+        let trimmed = editText.trimmingCharacters(in: .whitespaces)
+        if !trimmed.isEmpty && trimmed != name {
+            onRename?(trimmed)
+        } else {
+            onCancelEditing?()
+        }
+    }
+
+    private func cancelRename() {
+        onCancelEditing?()
     }
 
     private var itemBackground: Color {
@@ -198,7 +261,42 @@ struct SidebarProfileItem: View {
     }
 }
 
-// MARK: - SidebarTabItem
+struct ProfileSwapDropDelegate: DropDelegate {
+    let targetProfile: String
+    @Binding var draggedProfile: String?
+    @Binding var hoveredProfile: String?
+    let onReorder: (String, String) -> Void
+
+    func dropEntered(info: DropInfo) {
+        hoveredProfile = targetProfile
+    }
+
+    func dropExited(info: DropInfo) {
+        if hoveredProfile == targetProfile {
+            hoveredProfile = nil
+        }
+    }
+
+    func validateDrop(info: DropInfo) -> Bool {
+        draggedProfile != nil && draggedProfile != targetProfile
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        guard let source = draggedProfile, source != targetProfile else {
+            hoveredProfile = nil
+            draggedProfile = nil
+            return false
+        }
+        onReorder(source, targetProfile)
+        hoveredProfile = nil
+        draggedProfile = nil
+        return true
+    }
+}
 
 struct SidebarTabItem: View {
     let label: String

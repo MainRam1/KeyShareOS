@@ -1,9 +1,9 @@
 import Foundation
 
-/// Maps to the top-level JSON config file.
 struct MacroConfig: Codable, Equatable {
     var version: Int
     var activeProfile: String
+    var profileOrder: [String]?
     var profiles: [String: Profile]
     var autoSwitch: [String: String]
     var settings: AppSettings
@@ -11,9 +11,21 @@ struct MacroConfig: Codable, Equatable {
     enum CodingKeys: String, CodingKey {
         case version
         case activeProfile = "active_profile"
+        case profileOrder = "profile_order"
         case profiles
         case autoSwitch = "auto_switch"
         case settings
+    }
+
+    var resolvedProfileOrder: [String] {
+        guard let order = profileOrder else {
+            return profiles.keys.sorted()
+        }
+        let existing = Set(profiles.keys)
+        let filtered = order.filter { existing.contains($0) }
+        let missing = profiles.keys.filter { !filtered.contains($0) }.sorted()
+        let result = filtered + missing
+        return result.isEmpty ? profiles.keys.sorted() : result
     }
 }
 
@@ -48,15 +60,10 @@ struct AppSettings: Codable, Equatable {
     }
 }
 
-// MARK: - AnyCodable (type-erased JSON value)
-
-/// Type-erased Codable wrapper for heterogeneous JSON values.
-/// Supports String, Int, Double, Bool, [AnyCodable], and [String: AnyCodable].
 struct AnyCodable: Codable, Equatable {
     let value: Any
 
     init(_ value: Any) {
-        // Preserve AnyCodable wrappers; auto-wrap raw arrays/dicts
         if value is [AnyCodable] || value is [String: AnyCodable] {
             self.value = value
         } else if let array = value as? [Any] {
@@ -123,7 +130,6 @@ struct AnyCodable: Codable, Equatable {
     var stringValue: String? { value as? String }
     var intValue: Int? { value as? Int }
 
-    /// Recursively unwrap to plain Swift types for action execution.
     var anyValue: Any {
         switch value {
         case let array as [AnyCodable]:
@@ -137,20 +143,17 @@ struct AnyCodable: Codable, Equatable {
 }
 
 extension KeyBinding {
-    /// Unwrapped params for ActionExecutor.
     var actionParams: [String: Any] {
         params.mapValues { $0.anyValue }
     }
 }
 
-// MARK: - Hardcoded Test Config (Phase 2)
-
 #if DEBUG
 extension MacroConfig {
-    /// Test config exercising all 9 action types (Phase 2).
     static let testConfig = MacroConfig(
         version: 1,
         activeProfile: "test",
+        profileOrder: nil,
         profiles: [
             "test": Profile(
                 displayName: "Test Profile",

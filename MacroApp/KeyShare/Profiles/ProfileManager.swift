@@ -25,11 +25,9 @@ enum ProfileError: Error, CustomStringConvertible {
     }
 }
 
-/// Handles profile switching, creation, and deletion. Syncs with ConfigManager via Combine.
 final class ProfileManager: ObservableObject {
 
     @Published private(set) var activeProfile: String = ""
-    /// Sorted.
     @Published private(set) var availableProfiles: [String] = []
 
     private let configManager: ConfigManager
@@ -38,23 +36,20 @@ final class ProfileManager: ObservableObject {
     init(configManager: ConfigManager) {
         self.configManager = configManager
 
-        // Seed initial state from current config
         let config = configManager.config
         self.activeProfile = config.activeProfile
-        self.availableProfiles = config.profiles.keys.sorted()
+        self.availableProfiles = config.resolvedProfileOrder
 
-        // Rebuild when config changes.
         configManager.$config
             .receive(on: DispatchQueue.main)
             .sink { [weak self] newConfig in
                 guard let self = self else { return }
                 self.activeProfile = newConfig.activeProfile
-                self.availableProfiles = newConfig.profiles.keys.sorted()
+                self.availableProfiles = newConfig.resolvedProfileOrder
             }
             .store(in: &cancellables)
     }
 
-    /// - Throws: `ProfileError.profileNotFound` if the profile does not exist.
     func switchProfile(to name: String) throws {
         guard configManager.config.profiles[name] != nil else {
             throw ProfileError.profileNotFound(name)
@@ -67,7 +62,6 @@ final class ProfileManager: ObservableObject {
         Log.profiles.info("ProfileManager: switched to profile '\(name)'")
     }
 
-    /// - Throws: `ProfileError.invalidProfileName` or `.profileAlreadyExists`.
     func addProfile(name: String, displayName: String) throws {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else {
@@ -78,7 +72,6 @@ final class ProfileManager: ObservableObject {
             throw ProfileError.profileAlreadyExists(trimmedName)
         }
 
-        // Create profile with empty bindings for all 9 keys
         var emptyKeys: [String: KeyBinding] = [:]
         for keyIndex in 1...Constants.numberOfKeys {
             emptyKeys[String(keyIndex)] = KeyBinding(
@@ -89,13 +82,15 @@ final class ProfileManager: ObservableObject {
 
         let profile = Profile(displayName: displayName, keys: emptyKeys)
         try configManager.mutateConfig { config in
+            var order = config.resolvedProfileOrder
             config.profiles[trimmedName] = profile
+            order.append(trimmedName)
+            config.profileOrder = order
         }
-        availableProfiles = configManager.config.profiles.keys.sorted()
+        availableProfiles = configManager.config.resolvedProfileOrder
         Log.profiles.info("ProfileManager: added profile '\(trimmedName)' ('\(displayName)')")
     }
 
-    /// - Throws: `ProfileError.cannotDeleteLastProfile`, `.cannotDeleteActiveProfile`, or `.profileNotFound`.
     func deleteProfile(name: String) throws {
         guard configManager.config.profiles[name] != nil else {
             throw ProfileError.profileNotFound(name)
@@ -112,9 +107,38 @@ final class ProfileManager: ObservableObject {
         try configManager.mutateConfig { config in
             config.profiles.removeValue(forKey: name)
             config.autoSwitch = config.autoSwitch.filter { $0.value != name }
+            var order = config.resolvedProfileOrder
+            order.removeAll { $0 == name }
+            config.profileOrder = order
         }
-        availableProfiles = configManager.config.profiles.keys.sorted()
+        availableProfiles = configManager.config.resolvedProfileOrder
         Log.profiles.info("ProfileManager: deleted profile '\(name)'")
+    }
+
+    func moveProfile(from source: String, to target: String) throws {
+        guard source != target else { return }
+        try configManager.mutateConfig { config in
+            var order = config.resolvedProfileOrder
+            guard let sourceIndex = order.firstIndex(of: source),
+                  let targetIndex = order.firstIndex(of: target) else { return }
+            order.remove(at: sourceIndex)
+            order.insert(source, at: targetIndex)
+            config.profileOrder = order
+        }
+        availableProfiles = configManager.config.resolvedProfileOrder
+    }
+
+    func renameProfile(_ name: String, displayName newDisplayName: String) throws {
+        let trimmed = newDisplayName.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else {
+            throw ProfileError.invalidProfileName(newDisplayName)
+        }
+        guard configManager.config.profiles[name] != nil else {
+            throw ProfileError.profileNotFound(name)
+        }
+        try configManager.mutateConfig { config in
+            config.profiles[name]?.displayName = trimmed
+        }
     }
 
     func getActiveProfileBindings() -> Profile? {

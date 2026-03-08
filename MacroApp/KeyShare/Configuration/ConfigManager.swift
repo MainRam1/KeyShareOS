@@ -105,6 +105,7 @@ final class ConfigManager: ObservableObject {
         return MacroConfig(
             version: 1,
             activeProfile: "general",
+            profileOrder: nil,
             profiles: [
                 "general": Profile(
                     displayName: "General",
