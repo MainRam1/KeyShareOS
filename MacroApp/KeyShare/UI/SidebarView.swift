@@ -42,87 +42,87 @@ struct SidebarView: View {
 
     private var profileSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text("Profiles")
-                    .font(UIConstants.sectionHeaderFont)
-                Spacer()
-                Button {
-                    newProfileName = ""
-                    newDisplayName = ""
-                    showingAddProfile = true
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.body)
-                }
-                .buttonStyle(.plain)
-                .popover(isPresented: $showingAddProfile) {
-                    addProfilePopover
-                }
-            }
-            .padding(.horizontal, UIConstants.sidebarPadding)
-            .padding(.top, UIConstants.sidebarPadding)
-            .padding(.bottom, UIConstants.itemSpacing)
-
+            profileHeader
             ScrollView {
                 VStack(spacing: UIConstants.itemSpacing) {
                     ForEach(profileManager.availableProfiles, id: \.self) { name in
-                        let displayName = configManager.config.profiles[name]?.displayName ?? name
-                        let isActive = name == profileManager.activeProfile
-
-                        SidebarProfileItem(
-                            name: displayName,
-                            isActive: isActive,
-                            isDropTarget: hoveredProfile == name,
-                            isEditing: renamingProfile == name,
-                            action: {
-                                try? profileManager.switchProfile(to: name)
-                            },
-                            onRename: { newName in
-                                try? profileManager.renameProfile(name, displayName: newName)
-                                renamingProfile = nil
-                            },
-                            onStartEditing: {
-                                renamingProfile = name
-                            },
-                            onCancelEditing: {
-                                renamingProfile = nil
-                            }
-                        )
-                        .contextMenu {
-                            Button {
-                                renamingProfile = name
-                            } label: {
-                                Label("Rename", systemImage: "pencil")
-                            }
-                            if !isActive {
-                                Button(role: .destructive) {
-                                    try? profileManager.deleteProfile(name: name)
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
-                            }
-                        }
-                        .onDrag {
-                            draggedProfile = name
-                            return NSItemProvider(object: name as NSString)
-                        }
-                        .onDrop(
-                            of: [.plainText],
-                            delegate: ProfileSwapDropDelegate(
-                                targetProfile: name,
-                                draggedProfile: $draggedProfile,
-                                hoveredProfile: $hoveredProfile,
-                                onReorder: { source, target in
-                                    try? profileManager.moveProfile(from: source, to: target)
-                                }
-                            )
-                        )
-                        .opacity(draggedProfile == name ? 0.4 : 1.0)
+                        profileRow(for: name)
                     }
                 }
                 .padding(.horizontal, UIConstants.sidebarPadding)
             }
         }
+    }
+
+    private var profileHeader: some View {
+        HStack {
+            Text("Profiles")
+                .font(UIConstants.sectionHeaderFont)
+            Spacer()
+            Button {
+                newProfileName = ""
+                newDisplayName = ""
+                showingAddProfile = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.body)
+            }
+            .buttonStyle(.plain)
+            .popover(isPresented: $showingAddProfile) {
+                addProfilePopover
+            }
+        }
+        .padding(.horizontal, UIConstants.sidebarPadding)
+        .padding(.top, UIConstants.sidebarPadding)
+        .padding(.bottom, UIConstants.itemSpacing)
+    }
+
+    @ViewBuilder
+    private func profileRow(for name: String) -> some View {
+        let displayName = configManager.config.profiles[name]?.displayName ?? name
+        let isActive = name == profileManager.activeProfile
+
+        SidebarProfileItem(
+            name: displayName,
+            isActive: isActive,
+            isDropTarget: hoveredProfile == name,
+            isEditing: renamingProfile == name,
+            action: { try? profileManager.switchProfile(to: name) },
+            onRename: { newName in
+                try? profileManager.renameProfile(name, displayName: newName)
+                renamingProfile = nil
+            },
+            onStartEditing: { renamingProfile = name },
+            onCancelEditing: { renamingProfile = nil }
+        )
+        .contextMenu {
+            Button { renamingProfile = name } label: {
+                Label("Rename", systemImage: "pencil")
+            }
+            if !isActive {
+                Button(role: .destructive) {
+                    try? profileManager.deleteProfile(name: name)
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            }
+        }
+        .onDrag {
+            draggedProfile = name
+            return NSItemProvider(object: name as NSString)
+        }
+        .onDrop(
+            of: [.plainText],
+            delegate: ProfileSwapDropDelegate(
+                targetProfile: name,
+                draggedProfile: $draggedProfile,
+                hoveredProfile: $hoveredProfile,
+                onReorder: { source, target in
+                    try? profileManager.moveProfile(from: source, to: target)
+                }
+            )
+        )
+        .opacity(draggedProfile == name ? 0.4 : 1.0)
     }
 
     private var tabSection: some View {
