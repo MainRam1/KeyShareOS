@@ -87,12 +87,19 @@ struct SidebarView: View {
             isActive: isActive,
             isDropTarget: hoveredProfile == name,
             isEditing: renamingProfile == name,
-            action: { try? profileManager.switchProfile(to: name) },
+            action: {
+                draggedProfile = nil
+                try? profileManager.switchProfile(to: name)
+            },
             onRename: { newName in
                 try? profileManager.renameProfile(name, displayName: newName)
                 renamingProfile = nil
             },
-            onCancelEditing: { renamingProfile = nil }
+            onCancelEditing: { renamingProfile = nil },
+            onDragStart: {
+                draggedProfile = name
+                return NSItemProvider(object: name as NSString)
+            }
         )
         .contextMenu {
             Button { renamingProfile = name } label: {
@@ -105,10 +112,6 @@ struct SidebarView: View {
                     Label("Delete", systemImage: "trash")
                 }
             }
-        }
-        .onDrag {
-            draggedProfile = name
-            return NSItemProvider(object: name as NSString)
         }
         .onDrop(
             of: [.plainText],
@@ -194,13 +197,14 @@ struct SidebarProfileItem: View {
     let action: () -> Void
     var onRename: ((String) -> Void)?
     var onCancelEditing: (() -> Void)?
+    var onDragStart: (() -> NSItemProvider)?
 
     @State private var isHovered = false
     @State private var editText = ""
     @FocusState private var isTextFieldFocused: Bool
 
     var body: some View {
-        HStack {
+        HStack(spacing: 4) {
             if isEditing {
                 TextField("", text: $editText, onCommit: commitRename)
                     .textFieldStyle(.roundedBorder)
@@ -217,6 +221,13 @@ struct SidebarProfileItem: View {
                         }
                     }
             } else {
+                Image(systemName: "line.3.horizontal")
+                    .font(.caption2)
+                    .foregroundColor(.secondary.opacity(isHovered ? 1.0 : 0.0))
+                    .onDrag {
+                        onDragStart?() ?? NSItemProvider()
+                    }
+
                 Button(action: action) {
                     HStack {
                         Text(name)
