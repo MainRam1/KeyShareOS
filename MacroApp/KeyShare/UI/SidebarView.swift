@@ -92,7 +92,6 @@ struct SidebarView: View {
                 try? profileManager.renameProfile(name, displayName: newName)
                 renamingProfile = nil
             },
-            onStartEditing: { renamingProfile = name },
             onCancelEditing: { renamingProfile = nil }
         )
         .contextMenu {
@@ -194,20 +193,29 @@ struct SidebarProfileItem: View {
     let isEditing: Bool
     let action: () -> Void
     var onRename: ((String) -> Void)?
-    var onStartEditing: (() -> Void)?
     var onCancelEditing: (() -> Void)?
 
     @State private var isHovered = false
     @State private var editText = ""
+    @FocusState private var isTextFieldFocused: Bool
 
     var body: some View {
         HStack {
             if isEditing {
                 TextField("", text: $editText, onCommit: commitRename)
-                    .textFieldStyle(.plain)
+                    .textFieldStyle(.roundedBorder)
                     .font(UIConstants.sidebarItemFont)
+                    .focused($isTextFieldFocused)
                     .onExitCommand { cancelRename() }
-                    .onAppear { editText = name }
+                    .onAppear {
+                        editText = name
+                        isTextFieldFocused = true
+                    }
+                    .onChange(of: isTextFieldFocused) { focused in
+                        if !focused {
+                            commitRename()
+                        }
+                    }
             } else {
                 Button(action: action) {
                     HStack {
@@ -234,7 +242,6 @@ struct SidebarProfileItem: View {
         )
         .animation(.easeInOut(duration: 0.15), value: isDropTarget)
         .onHover { isHovered = $0 }
-        .onTapGesture(count: 2) { onStartEditing?() }
     }
 
     private func commitRename() {
