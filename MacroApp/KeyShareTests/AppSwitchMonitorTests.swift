@@ -30,7 +30,8 @@ class AppSwitchMonitorTests: XCTestCase {
     func testCreation() {
         let monitor = AppSwitchMonitor(
             profileManager: profileManager,
-            configManager: configManager
+            configManager: configManager,
+            browserMonitor: BrowserURLMonitor()
         )
         XCTAssertNotNil(monitor)
     }
@@ -38,7 +39,8 @@ class AppSwitchMonitorTests: XCTestCase {
     func testStartStopIdempotent() {
         let monitor = AppSwitchMonitor(
             profileManager: profileManager,
-            configManager: configManager
+            configManager: configManager,
+            browserMonitor: BrowserURLMonitor()
         )
         monitor.start()
         monitor.start()

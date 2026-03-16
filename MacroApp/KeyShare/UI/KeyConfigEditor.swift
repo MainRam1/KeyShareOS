@@ -17,7 +17,6 @@ struct KeyConfigEditor: View {
 
     @Environment(\.dismiss) var dismiss
 
-    // Local editing state
     @State private var selectedAction: String = "none"
     @State private var errorMessage: String?
     @State private var showingError = false
@@ -60,69 +59,10 @@ struct KeyConfigEditor: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            Text("Configure Key \(keyNumber)")
-                .font(.headline)
-                .padding(.top, 16)
-                .padding(.bottom, 8)
-
-            Form {
-                // Action type picker
-                Picker("Action Type", selection: $selectedAction) {
-                    Text("None").tag("none")
-                    ForEach(ActionRegistry.shared.registeredTypes, id: \.self) { type in
-                        Text(formatActionName(type)).tag(type)
-                    }
-                }
-                .pickerStyle(.menu)
-
-                TextField("Custom display name (optional)", text: $displayName)
-                    .textFieldStyle(.roundedBorder)
-
-                // Action-specific params
-                switch selectedAction {
-                case "keyboard_shortcut":
-                    keyboardShortcutParams
-                case "app_launch":
-                    appLaunchParams
-                case "text_type":
-                    textTypeParams
-                case "desktop_switch":
-                    desktopSwitchParams
-                case "media_control":
-                    mediaControlParams
-                case "open_url":
-                    urlOpenParams
-                case "app_action":
-                    appActionParams
-                case "macro":
-                    MacroStepEditor(steps: $macroSteps)
-                default:
-                    EmptyView()
-                }
-            }
-            .padding(.horizontal)
-
+            headerView
+            formContent
             Spacer()
-
-            // Buttons
-            HStack {
-                Button("Cancel") {
-                    dismiss()
-                    onDismiss()
-                }
-                .keyboardShortcut(.cancelAction)
-
-                Spacer()
-
-                Button("Save") {
-                    saveBinding()
-                    dismiss()
-                    onDismiss()
-                }
-                .keyboardShortcut(.defaultAction)
-            }
-            .padding()
+            buttonBar
         }
         .frame(width: 480, height: 500)
         .onAppear { loadCurrentBinding() }
@@ -131,6 +71,66 @@ struct KeyConfigEditor: View {
         } message: {
             Text(errorMessage ?? "Unknown error")
         }
+    }
+
+    private var headerView: some View {
+        Text("Configure Key \(keyNumber)")
+            .font(.headline)
+            .padding(.top, 16)
+            .padding(.bottom, 8)
+    }
+
+    private var formContent: some View {
+        Form {
+            Picker("Action Type", selection: $selectedAction) {
+                Text("None").tag("none")
+                ForEach(ActionRegistry.shared.registeredTypes, id: \.self) { type in
+                    Text(formatActionName(type)).tag(type)
+                }
+            }
+            .pickerStyle(.menu)
+
+            TextField("Custom display name (optional)", text: $displayName)
+                .textFieldStyle(.roundedBorder)
+
+            actionParamsView
+        }
+        .padding(.horizontal)
+    }
+
+    @ViewBuilder
+    private var actionParamsView: some View {
+        switch selectedAction {
+        case "keyboard_shortcut": keyboardShortcutParams
+        case "app_launch": appLaunchParams
+        case "text_type": textTypeParams
+        case "desktop_switch": desktopSwitchParams
+        case "media_control": mediaControlParams
+        case "open_url": urlOpenParams
+        case "app_action": appActionParams
+        case "macro": MacroStepEditor(steps: $macroSteps)
+        default: EmptyView()
+        }
+    }
+
+    private var buttonBar: some View {
+        HStack {
+            Button("Cancel") {
+                dismiss()
+                onDismiss()
+            }
+            .keyboardShortcut(.cancelAction)
+
+            Spacer()
+
+            Button("Save") {
+                saveBinding()
+                dismiss()
+                onDismiss()
+            }
+            .keyboardShortcut(.defaultAction)
+        }
+        .padding()
     }
 
     // MARK: - Action-Specific Parameter Views
@@ -232,10 +232,22 @@ struct KeyConfigEditor: View {
               let scheme = url.scheme?.lowercased() else { return false }
         return scheme == "http" || scheme == "https"
     }
+}
 
-    // MARK: - Load / Save
+// MARK: - Load / Save
 
-    private func loadCurrentBinding() {
+extension KeyConfigEditor {
+
+    private func buildModifierList() -> [String] {
+        var mods: [String] = []
+        if useCmd { mods.append("cmd") }
+        if useShift { mods.append("shift") }
+        if useCtrl { mods.append("ctrl") }
+        if useAlt { mods.append("alt") }
+        return mods
+    }
+
+    func loadCurrentBinding() {
         guard let profile = configManager.config.profiles[profileName],
               let binding = profile.keys[String(keyNumber)] else { return }
 
@@ -281,18 +293,13 @@ struct KeyConfigEditor: View {
         }
     }
 
-    private func saveBinding() {
+    func saveBinding() {
         let params: [String: AnyCodable]
 
         switch selectedAction {
         case "keyboard_shortcut":
-            var mods: [String] = []
-            if useCmd { mods.append("cmd") }
-            if useShift { mods.append("shift") }
-            if useCtrl { mods.append("ctrl") }
-            if useAlt { mods.append("alt") }
             params = [
-                "modifiers": AnyCodable(mods),
+                "modifiers": AnyCodable(buildModifierList()),
                 "key": AnyCodable(shortcutKey),
             ]
         case "app_launch":
@@ -344,5 +351,4 @@ struct KeyConfigEditor: View {
             showingError = true
         }
     }
-
 }

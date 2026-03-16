@@ -128,76 +128,72 @@ struct SettingsTabView: View {
             Text("Website Auto-Switch")
                 .font(UIConstants.sectionHeaderFont)
 
-            Text("Switch profiles based on the active website in Safari or Chrome. Requires Automation permission per browser.")
+            Text("Switch profiles based on the active website in Safari or Chrome.")
                 .font(.caption)
                 .foregroundColor(.secondary)
 
-            let websiteRules = configManager.config.websiteSwitch ?? [:]
+            websiteRulesContent
+            websiteAddRuleForm
+        }
+    }
 
-            if websiteRules.isEmpty {
-                Text("No website rules configured.")
-                    .foregroundColor(.secondary)
-            } else {
-                ForEach(Array(websiteRules.keys.sorted()), id: \.self) { domain in
-                    HStack {
-                        Text(domain)
-                            .font(.system(.body, design: .monospaced))
-                        Spacer()
-                        Text(websiteRules[domain] ?? "")
-                            .foregroundColor(.secondary)
-                        Button(role: .destructive) {
-                            configManager.config.websiteSwitch?.removeValue(forKey: domain)
-                            saveConfig()
-                        } label: {
-                            Image(systemName: "trash")
-                        }
-                        .buttonStyle(.borderless)
-                    }
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 8) {
-                TextField("Domain (e.g. github.com)", text: $newWebsiteDomain)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(maxWidth: 300)
-
+    @ViewBuilder
+    private var websiteRulesContent: some View {
+        let rules = configManager.config.websiteSwitch ?? [:]
+        if rules.isEmpty {
+            Text("No website rules configured.")
+                .foregroundColor(.secondary)
+        } else {
+            ForEach(Array(rules.keys.sorted()), id: \.self) { domain in
                 HStack {
-                    Picker("Profile", selection: $newWebsiteProfile) {
-                        Text("Select...").tag("")
-                        ForEach(profileManager.availableProfiles, id: \.self) { name in
-                            Text(name).tag(name)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .frame(width: 160)
-
-                    Button("Add Rule") {
-                        let domain = normalizeDomain(newWebsiteDomain)
-                        guard !domain.isEmpty, !newWebsiteProfile.isEmpty else { return }
-                        if configManager.config.websiteSwitch == nil {
-                            configManager.config.websiteSwitch = [:]
-                        }
-                        configManager.config.websiteSwitch?[domain] = newWebsiteProfile
+                    Text(domain)
+                        .font(.system(.body, design: .monospaced))
+                    Spacer()
+                    Text(rules[domain] ?? "")
+                        .foregroundColor(.secondary)
+                    Button(role: .destructive) {
+                        configManager.config.websiteSwitch?.removeValue(forKey: domain)
                         saveConfig()
-                        newWebsiteDomain = ""
-                        newWebsiteProfile = ""
+                    } label: {
+                        Image(systemName: "trash")
                     }
-                    .disabled(newWebsiteDomain.trimmingCharacters(in: .whitespaces).isEmpty
-                              || newWebsiteProfile.isEmpty)
+                    .buttonStyle(.borderless)
                 }
             }
         }
     }
 
-    private func normalizeDomain(_ input: String) -> String {
-        var domain = input.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        if domain.hasPrefix("https://") { domain = String(domain.dropFirst(8)) }
-        if domain.hasPrefix("http://") { domain = String(domain.dropFirst(7)) }
-        if let slashIndex = domain.firstIndex(of: "/") {
-            domain = String(domain[domain.startIndex..<slashIndex])
+    private var websiteAddRuleForm: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            TextField("Domain (e.g. github.com)", text: $newWebsiteDomain)
+                .textFieldStyle(.roundedBorder)
+                .frame(maxWidth: 300)
+
+            HStack {
+                Picker("Profile", selection: $newWebsiteProfile) {
+                    Text("Select...").tag("")
+                    ForEach(profileManager.availableProfiles, id: \.self) { name in
+                        Text(name).tag(name)
+                    }
+                }
+                .pickerStyle(.menu)
+                .frame(width: 160)
+
+                Button("Add Rule") {
+                    let domain = normalizeDomain(newWebsiteDomain)
+                    guard !domain.isEmpty, !newWebsiteProfile.isEmpty else { return }
+                    if configManager.config.websiteSwitch == nil {
+                        configManager.config.websiteSwitch = [:]
+                    }
+                    configManager.config.websiteSwitch?[domain] = newWebsiteProfile
+                    saveConfig()
+                    newWebsiteDomain = ""
+                    newWebsiteProfile = ""
+                }
+                .disabled(newWebsiteDomain.trimmingCharacters(in: .whitespaces).isEmpty
+                          || newWebsiteProfile.isEmpty)
+            }
         }
-        if domain.hasPrefix("www.") { domain = String(domain.dropFirst(4)) }
-        return domain
     }
 
     // MARK: - Import / Export Section
@@ -245,7 +241,7 @@ struct SettingsTabView: View {
         }
     }
 
-    // MARK: - Actions
+    // MARK: - Helpers
 
     private func showError(_ error: Error) {
         errorMessage = String(describing: error)
@@ -258,6 +254,22 @@ struct SettingsTabView: View {
         } catch {
             showError(error)
         }
+    }
+}
+
+// MARK: - Actions
+
+extension SettingsTabView {
+
+    private func normalizeDomain(_ input: String) -> String {
+        var domain = input.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if domain.hasPrefix("https://") { domain = String(domain.dropFirst(8)) }
+        if domain.hasPrefix("http://") { domain = String(domain.dropFirst(7)) }
+        if let slashIndex = domain.firstIndex(of: "/") {
+            domain = String(domain[domain.startIndex..<slashIndex])
+        }
+        if domain.hasPrefix("www.") { domain = String(domain.dropFirst(4)) }
+        return domain
     }
 
     private func exportActiveProfile() {

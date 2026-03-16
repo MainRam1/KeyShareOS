@@ -45,6 +45,15 @@ struct MacroStepModel: Identifiable {
         MacroStepModel(isDelay: false, delayMs: 0, actionType: "keyboard_shortcut")
     }
 
+    private func buildModifiers() -> [String] {
+        var mods: [String] = []
+        if useCmd { mods.append("cmd") }
+        if useShift { mods.append("shift") }
+        if useCtrl { mods.append("ctrl") }
+        if useAlt { mods.append("alt") }
+        return mods
+    }
+
     func toStepDict() -> [String: Any] {
         if isDelay {
             return ["delay_ms": delayMs]
@@ -52,12 +61,7 @@ struct MacroStepModel: Identifiable {
 
         switch actionType {
         case "keyboard_shortcut":
-            var mods: [String] = []
-            if useCmd { mods.append("cmd") }
-            if useShift { mods.append("shift") }
-            if useCtrl { mods.append("ctrl") }
-            if useAlt { mods.append("alt") }
-            return ["action": "keyboard_shortcut", "params": ["modifiers": mods, "key": shortcutKey]]
+            return ["action": "keyboard_shortcut", "params": ["modifiers": buildModifiers(), "key": shortcutKey]]
         case "app_launch":
             var params: [String: Any] = ["bundle_id": bundleID]
             if !appName.isEmpty {

@@ -124,14 +124,14 @@ struct MenuItemRow: View {
             Divider()
                 .padding(.horizontal, 8)
         } else if item.hasSubmenu {
-            DisclosureGroup(isExpanded: $isExpanded) {
+            DisclosureGroup(isExpanded: $isExpanded, content: {
                 ForEach(item.children) { child in
                     MenuItemRow(item: child, selectedPath: selectedPath, onSelect: onSelect)
                         .padding(.leading, 8)
                 }
-            } label: {
+            }, label: {
                 menuLabel
-            }
+            })
             .padding(.horizontal, 8)
             .padding(.vertical, 2)
         } else {
