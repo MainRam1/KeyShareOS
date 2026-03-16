@@ -1,12 +1,14 @@
-# Macro
+# KeyShare
 
-An open-source 9-key programmable macropad built from the ground up — custom PCB designed in KiCad, CircuitPython firmware running on the RP2040, and a native macOS companion app written in Swift. Assign keyboard shortcuts, launch apps, type text, switch desktops, control media, open URLs, or chain actions into multi-step macros — all from a compact 3x3 mechanical key grid that auto-switches profiles based on your active application.
+An open-source 9-key programmable macropad built from the ground up — custom PCB designed in KiCad, CircuitPython firmware running on the RP2040, and a native macOS companion app written in Swift. Assign keyboard shortcuts, launch apps, type text, switch desktops, control media, open URLs, trigger app menu actions, or chain actions into multi-step macros — all from a compact 3x3 mechanical key grid that auto-switches profiles based on your active application or website.
 
 ## Features
 
-- **7 action types** -- keyboard shortcuts, app launch, text typing, desktop switching, media control, multi-step macros, open url
+- **8 action types** -- keyboard shortcuts, app launch, text typing, desktop switching, media control, open url, app menu actions, multi-step macros
 - **Unlimited profiles** -- organize keys by task or project
-- **Auto-switch** -- profiles change automatically based on the active application
+- **Auto-switch by app** -- profiles change automatically based on the active application
+- **Auto-switch by website** -- profiles change based on the active tab in Safari or Chrome
+- **App menu actions** -- browse and trigger any menu bar item in any running app, with keyboard shortcut fallback
 - **Visual key editor** -- drag-and-drop 3x3 grid in the preferences window
 - **OSD overlay** -- on-screen display when the active profile changes
 - **Menu bar utility** -- lives in the menu bar with no Dock icon
@@ -17,7 +19,7 @@ An open-source 9-key programmable macropad built from the ground up — custom P
 
 ## How It Works
 
-Press a Cherry MX key on the macropad → the RP2040 firmware sends a JSON message over USB serial → the macOS menu bar app receives it and executes the configured action. The app monitors your active application and automatically switches profiles, so your keys always match what you're working in. A bidirectional serial protocol handles device detection, hot-plug recovery, and sleep/wake reconnection.
+Press a Cherry MX key on the macropad → the RP2040 firmware sends a JSON message over USB serial → the macOS menu bar app receives it and executes the configured action. The app monitors your active application and browser tab, automatically switching profiles so your keys always match what you're working in. A bidirectional serial protocol handles device detection, hot-plug recovery, and sleep/wake reconnection.
 
 ## Requirements
 
@@ -41,9 +43,9 @@ Key components: RP2040 microcontroller, W25Q16 16Mbit SPI flash, USB-C connector
 ## Quick Start
 
 1. **Flash firmware** -- install [CircuitPython 9.x](https://circuitpython.org/board/raspberry_pi_pico/) on the Pico, then copy `firmware/code.py` and `firmware/boot.py` to the `CIRCUITPY` drive.
-2. **Download the app** -- grab the latest `.zip` from [GitHub Releases](../../releases), unzip, and move `Macro.app` to `/Applications`.
+2. **Download the app** -- grab the latest `.zip` from [GitHub Releases](../../releases), unzip, and move `KeyShare.app` to `/Applications`.
 3. **Launch** -- open the app. It appears in the menu bar.
-4. **Grant Accessibility permission** -- the first-launch onboarding will prompt you. Go to **System Settings > Privacy & Security > Accessibility** and enable Macro.
+4. **Grant Accessibility permission** -- the first-launch onboarding will prompt you. Go to **System Settings > Privacy & Security > Accessibility** and enable KeyShare.
 5. **Plug in the macropad** -- the app detects it automatically.
 
 ## Building from Source
@@ -57,7 +59,7 @@ cd MacroApp
 xcodegen generate
 
 # Build
-xcodebuild -project MacroApp.xcodeproj -scheme MacroApp -configuration Release build
+xcodebuild -project KeyShare.xcodeproj -scheme KeyShare -configuration Release build
 ```
 
 The built `.app` bundle is ad-hoc signed -- no Apple Developer ID required.
@@ -80,7 +82,7 @@ The Pico will reboot and begin communicating over USB serial.
 The app stores its config at:
 
 ```
-~/Library/Application Support/Macro/config.json
+~/Library/Application Support/KeyShare/config.json
 ```
 
 You can edit profiles and key bindings through the preferences window or by editing the JSON file directly. Changes are picked up automatically.
