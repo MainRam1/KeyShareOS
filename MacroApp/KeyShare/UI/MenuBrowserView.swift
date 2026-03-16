@@ -135,9 +135,9 @@ struct MenuItemRow: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 2)
         } else {
-            Button(action: { onSelect(item) }) {
+            Button(action: { onSelect(item) }, label: {
                 menuLabel
-            }
+            })
             .buttonStyle(.plain)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
