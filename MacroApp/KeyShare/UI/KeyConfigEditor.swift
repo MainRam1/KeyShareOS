@@ -45,6 +45,13 @@ struct KeyConfigEditor: View {
 
     @State private var urlString = ""
 
+    // app_action params
+    @State private var appActionBundleID = ""
+    @State private var appActionAppName = ""
+    @State private var appActionMenuPath: [String] = []
+    @State private var appActionShortcutKey = ""
+    @State private var appActionShortcutModifiers: [String] = []
+
     // display name (all action types)
     @State private var displayName = ""
 
@@ -86,6 +93,8 @@ struct KeyConfigEditor: View {
                     mediaControlParams
                 case "open_url":
                     urlOpenParams
+                case "app_action":
+                    appActionParams
                 case "macro":
                     MacroStepEditor(steps: $macroSteps)
                 default:
@@ -207,6 +216,17 @@ struct KeyConfigEditor: View {
         }
     }
 
+    @ViewBuilder
+    private var appActionParams: some View {
+        MenuBrowserView(
+            bundleID: $appActionBundleID,
+            appName: $appActionAppName,
+            menuPath: $appActionMenuPath,
+            shortcutKey: $appActionShortcutKey,
+            shortcutModifiers: $appActionShortcutModifiers
+        )
+    }
+
     private func isValidWebURL(_ string: String) -> Bool {
         guard let url = URL(string: string),
               let scheme = url.scheme?.lowercased() else { return false }
@@ -242,6 +262,16 @@ struct KeyConfigEditor: View {
             mediaAction = binding.params["action"]?.stringValue ?? "play_pause"
         case "open_url":
             urlString = binding.params["url"]?.stringValue ?? ""
+        case "app_action":
+            appActionBundleID = binding.params["bundle_id"]?.stringValue ?? ""
+            appActionAppName = binding.params["app_name"]?.stringValue ?? ""
+            if let path = binding.params["menu_path"]?.anyValue as? [Any] {
+                appActionMenuPath = path.compactMap { $0 as? String }
+            }
+            if let fallback = binding.params["shortcut_fallback"]?.anyValue as? [String: Any] {
+                appActionShortcutKey = fallback["key"] as? String ?? ""
+                appActionShortcutModifiers = (fallback["modifiers"] as? [Any])?.compactMap { $0 as? String } ?? []
+            }
         case "macro":
             if let stepsArray = binding.params["steps"]?.anyValue as? [[String: Any]] {
                 macroSteps = stepsArray.map { MacroStepModel(from: $0) }
@@ -282,6 +312,21 @@ struct KeyConfigEditor: View {
             params = ["action": AnyCodable(mediaAction)]
         case "open_url":
             params = ["url": AnyCodable(urlString)]
+        case "app_action":
+            var p: [String: AnyCodable] = [
+                "bundle_id": AnyCodable(appActionBundleID),
+                "menu_path": AnyCodable(appActionMenuPath),
+            ]
+            if !appActionAppName.isEmpty {
+                p["app_name"] = AnyCodable(appActionAppName)
+            }
+            if !appActionShortcutKey.isEmpty {
+                p["shortcut_fallback"] = AnyCodable([
+                    "key": appActionShortcutKey,
+                    "modifiers": appActionShortcutModifiers,
+                ] as [String: Any])
+            }
+            params = p
         case "macro":
             params = ["steps": AnyCodable(macroSteps.map { $0.toStepDict() })]
         default:

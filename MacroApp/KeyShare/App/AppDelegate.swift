@@ -13,6 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var profileManager: ProfileManager!
     private var serialManager: SerialDeviceManager!
     private var statusBarController: StatusBarController!
+    private var browserURLMonitor: BrowserURLMonitor!
     private var appSwitchMonitor: AppSwitchMonitor!
     private var deviceMonitor: DeviceMonitor!
     private var onboardingController: OnboardingWindowController?
@@ -28,6 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ActionRegistry.shared.register(DesktopSwitchAction())
         ActionRegistry.shared.register(MediaControlAction())
         ActionRegistry.shared.register(URLOpenAction())
+        ActionRegistry.shared.register(AppActionAction())
         ActionRegistry.shared.register(MacroAction())
 
         Log.general.info("Registered action types: \(ActionRegistry.shared.registeredTypes.joined(separator: ", "))")
@@ -79,10 +81,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             configManager: configManager
         )
 
+        browserURLMonitor = BrowserURLMonitor()
+
         // Auto-switch monitor (watches active app)
         appSwitchMonitor = AppSwitchMonitor(
             profileManager: profileManager,
-            configManager: configManager
+            configManager: configManager,
+            browserMonitor: browserURLMonitor
         )
         appSwitchMonitor.start()
 

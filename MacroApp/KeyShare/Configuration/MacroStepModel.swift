@@ -23,6 +23,12 @@ struct MacroStepModel: Identifiable {
     // media_control
     var mediaAction: String = "play_pause"
     var urlString: String = ""
+    // app_action
+    var appActionBundleID: String = ""
+    var appActionAppName: String = ""
+    var appActionMenuPath: [String] = []
+    var appActionShortcutKey: String = ""
+    var appActionShortcutModifiers: [String] = []
 
     init(id: UUID = UUID(), isDelay: Bool, delayMs: Int, actionType: String) {
         self.id = id
@@ -66,6 +72,21 @@ struct MacroStepModel: Identifiable {
             return ["action": "media_control", "params": ["action": mediaAction]]
         case "open_url":
             return ["action": "open_url", "params": ["url": urlString]]
+        case "app_action":
+            var params: [String: Any] = [
+                "bundle_id": appActionBundleID,
+                "menu_path": appActionMenuPath,
+            ]
+            if !appActionAppName.isEmpty {
+                params["app_name"] = appActionAppName
+            }
+            if !appActionShortcutKey.isEmpty {
+                params["shortcut_fallback"] = [
+                    "key": appActionShortcutKey,
+                    "modifiers": appActionShortcutModifiers,
+                ] as [String: Any]
+            }
+            return ["action": "app_action", "params": params]
         default:
             return ["action": actionType, "params": [String: Any]()]
         }
@@ -112,6 +133,14 @@ struct MacroStepModel: Identifiable {
             self.mediaAction = params["action"] as? String ?? "play_pause"
         case "open_url":
             self.urlString = params["url"] as? String ?? ""
+        case "app_action":
+            self.appActionBundleID = params["bundle_id"] as? String ?? ""
+            self.appActionAppName = params["app_name"] as? String ?? ""
+            self.appActionMenuPath = (params["menu_path"] as? [Any])?.compactMap { $0 as? String } ?? []
+            if let fallback = params["shortcut_fallback"] as? [String: Any] {
+                self.appActionShortcutKey = fallback["key"] as? String ?? ""
+                self.appActionShortcutModifiers = (fallback["modifiers"] as? [Any])?.compactMap { $0 as? String } ?? []
+            }
         default:
             break
         }

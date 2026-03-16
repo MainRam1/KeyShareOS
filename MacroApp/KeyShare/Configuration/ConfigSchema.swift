@@ -6,6 +6,7 @@ struct MacroConfig: Codable, Equatable {
     var profileOrder: [String]?
     var profiles: [String: Profile]
     var autoSwitch: [String: String]
+    var websiteSwitch: [String: String]?
     var settings: AppSettings
 
     enum CodingKeys: String, CodingKey {
@@ -14,6 +15,7 @@ struct MacroConfig: Codable, Equatable {
         case profileOrder = "profile_order"
         case profiles
         case autoSwitch = "auto_switch"
+        case websiteSwitch = "website_switch"
         case settings
     }
 
@@ -192,6 +194,7 @@ extension MacroConfig {
             ),
         ],
         autoSwitch: [:],
+        websiteSwitch: [:],
         settings: AppSettings(launchAtLogin: false, showOSD: true)
     )
 }

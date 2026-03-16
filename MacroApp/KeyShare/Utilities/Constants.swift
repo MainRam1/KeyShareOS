@@ -198,6 +198,12 @@ enum Constants {
         static let previous: UInt32 = 18
     }
 
+    // MARK: - Browsers
+
+    static let safariBundleID = "com.apple.Safari"
+    static let chromeBundleID = "com.google.Chrome"
+    static let supportedBrowsers: Set<String> = [safariBundleID, chromeBundleID]
+
     /// Checked before play_pause to prevent rcd from auto-launching Apple Music.
     /// Browsers excluded (always running, false positives).
     static let mediaPlayerBundleIDs: Set<String> = [

@@ -1,21 +1,20 @@
 import AppKit
+import Combine
 import Foundation
 import os
 
-/// Auto-switches profiles when the active app matches an autoSwitch rule.
-///
-/// API constraints:
-/// - Must use NSWorkspace.shared.notificationCenter (NOT NotificationCenter.default).
-/// - Block-based observers are NOT auto-removed; must removeObserver in deinit.
 final class AppSwitchMonitor {
 
     private let profileManager: ProfileManager
     private let configManager: ConfigManager
+    private let browserMonitor: BrowserURLMonitor
     private var observer: NSObjectProtocol?
+    private var domainCancellable: AnyCancellable?
 
-    init(profileManager: ProfileManager, configManager: ConfigManager) {
+    init(profileManager: ProfileManager, configManager: ConfigManager, browserMonitor: BrowserURLMonitor) {
         self.profileManager = profileManager
         self.configManager = configManager
+        self.browserMonitor = browserMonitor
     }
 
     func start() {
@@ -29,10 +28,22 @@ final class AppSwitchMonitor {
             self?.handleAppActivation(notification)
         }
 
-        Log.profiles.info("AppSwitchMonitor: started monitoring active application changes")
+        domainCancellable = browserMonitor.$activeDomain
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] domain in
+                self?.handleDomainChange(domain)
+            }
+
+        browserMonitor.start()
+
+        Log.profiles.info("AppSwitchMonitor: started monitoring active application and website changes")
     }
 
     func stop() {
+        browserMonitor.stop()
+        domainCancellable?.cancel()
+        domainCancellable = nil
+
         if let observer = observer {
             NSWorkspace.shared.notificationCenter.removeObserver(observer)
             self.observer = nil
@@ -41,32 +52,60 @@ final class AppSwitchMonitor {
     }
 
     deinit {
-        // Block-based observers are NOT auto-removed
         if let observer = observer {
             NSWorkspace.shared.notificationCenter.removeObserver(observer)
         }
     }
 
+    private func handleDomainChange(_ domain: String?) {
+        guard let domain = domain else { return }
+
+        let websiteRules = configManager.config.websiteSwitch ?? [:]
+        guard let targetProfile = websiteRules[domain] else { return }
+
+        guard profileManager.activeProfile != targetProfile else { return }
+
+        do {
+            try profileManager.switchProfile(to: targetProfile)
+            Log.profiles.info("AppSwitchMonitor: website-switched to profile '\(targetProfile)' for domain '\(domain)'")
+        } catch {
+            Log.profiles.error("AppSwitchMonitor: failed to website-switch to '\(targetProfile)' for domain '\(domain)': \(String(describing: error))")
+        }
+    }
+
     private func handleAppActivation(_ notification: Notification) {
-        // Extract the activated application from the notification's userInfo
         guard let app = notification.userInfo?[NSWorkspace.applicationUserInfoKey]
                 as? NSRunningApplication else {
             Log.profiles.warning("AppSwitchMonitor: could not extract NSRunningApplication from notification")
             return
         }
 
-        // Some system processes have nil bundleIdentifier — guard against it
         guard let bundleID = app.bundleIdentifier else {
             return
         }
 
-        // Look up the bundle ID in the auto-switch rules
+        if Constants.supportedBrowsers.contains(bundleID) {
+            if let domain = browserMonitor.queryCurrentDomain() {
+                let websiteRules = configManager.config.websiteSwitch ?? [:]
+                if let targetProfile = websiteRules[domain] {
+                    if profileManager.activeProfile != targetProfile {
+                        do {
+                            try profileManager.switchProfile(to: targetProfile)
+                            Log.profiles.info("AppSwitchMonitor: website-switched to profile '\(targetProfile)' for domain '\(domain)'")
+                        } catch {
+                            Log.profiles.error("AppSwitchMonitor: failed to website-switch: \(String(describing: error))")
+                        }
+                    }
+                    return
+                }
+            }
+        }
+
         let autoSwitchRules = configManager.config.autoSwitch
         guard let targetProfile = autoSwitchRules[bundleID] else {
             return
         }
 
-        // Only switch if we are not already on the target profile
         guard profileManager.activeProfile != targetProfile else {
             return
         }

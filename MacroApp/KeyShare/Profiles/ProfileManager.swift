@@ -107,6 +107,7 @@ final class ProfileManager: ObservableObject {
         try configManager.mutateConfig { config in
             config.profiles.removeValue(forKey: name)
             config.autoSwitch = config.autoSwitch.filter { $0.value != name }
+            config.websiteSwitch = config.websiteSwitch?.filter { $0.value != name }
             var order = config.resolvedProfileOrder
             order.removeAll { $0 == name }
             config.profileOrder = order

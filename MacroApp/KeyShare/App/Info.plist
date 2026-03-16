@@ -24,6 +24,8 @@
 	<true/>
 	<key>NSAccessibilityUsageDescription</key>
 	<string>Macro uses Accessibility to simulate keyboard shortcuts and control applications for your macropad.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>KeyShare reads the active browser tab URL to automatically switch your macropad profile based on the website you are viewing.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright 2026 Ram Pierce</string>
 </dict>

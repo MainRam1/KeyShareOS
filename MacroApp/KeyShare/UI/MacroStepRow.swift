@@ -58,6 +58,14 @@ struct ActionStepRow: View {
         case "open_url":
             TextField("URL", text: $step.urlString)
                 .textFieldStyle(.roundedBorder)
+        case "app_action":
+            MenuBrowserView(
+                bundleID: $step.appActionBundleID,
+                appName: $step.appActionAppName,
+                menuPath: $step.appActionMenuPath,
+                shortcutKey: $step.appActionShortcutKey,
+                shortcutModifiers: $step.appActionShortcutModifiers
+            )
         default:
             EmptyView()
         }

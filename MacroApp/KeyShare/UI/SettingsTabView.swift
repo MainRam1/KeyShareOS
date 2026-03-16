@@ -17,11 +17,15 @@ struct SettingsTabView: View {
     @State private var newAppName = ""
     @State private var newSwitchProfile = ""
 
+    @State private var newWebsiteDomain = ""
+    @State private var newWebsiteProfile = ""
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: UIConstants.contentPadding) {
                 generalSection
                 autoSwitchSection
+                websiteSwitchSection
                 importExportSection
                 configSection
             }
@@ -117,6 +121,83 @@ struct SettingsTabView: View {
                 }
             }
         }
+    }
+
+    private var websiteSwitchSection: some View {
+        VStack(alignment: .leading, spacing: UIConstants.itemSpacing) {
+            Text("Website Auto-Switch")
+                .font(UIConstants.sectionHeaderFont)
+
+            Text("Switch profiles based on the active website in Safari or Chrome. Requires Automation permission per browser.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            let websiteRules = configManager.config.websiteSwitch ?? [:]
+
+            if websiteRules.isEmpty {
+                Text("No website rules configured.")
+                    .foregroundColor(.secondary)
+            } else {
+                ForEach(Array(websiteRules.keys.sorted()), id: \.self) { domain in
+                    HStack {
+                        Text(domain)
+                            .font(.system(.body, design: .monospaced))
+                        Spacer()
+                        Text(websiteRules[domain] ?? "")
+                            .foregroundColor(.secondary)
+                        Button(role: .destructive) {
+                            configManager.config.websiteSwitch?.removeValue(forKey: domain)
+                            saveConfig()
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                TextField("Domain (e.g. github.com)", text: $newWebsiteDomain)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(maxWidth: 300)
+
+                HStack {
+                    Picker("Profile", selection: $newWebsiteProfile) {
+                        Text("Select...").tag("")
+                        ForEach(profileManager.availableProfiles, id: \.self) { name in
+                            Text(name).tag(name)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .frame(width: 160)
+
+                    Button("Add Rule") {
+                        let domain = normalizeDomain(newWebsiteDomain)
+                        guard !domain.isEmpty, !newWebsiteProfile.isEmpty else { return }
+                        if configManager.config.websiteSwitch == nil {
+                            configManager.config.websiteSwitch = [:]
+                        }
+                        configManager.config.websiteSwitch?[domain] = newWebsiteProfile
+                        saveConfig()
+                        newWebsiteDomain = ""
+                        newWebsiteProfile = ""
+                    }
+                    .disabled(newWebsiteDomain.trimmingCharacters(in: .whitespaces).isEmpty
+                              || newWebsiteProfile.isEmpty)
+                }
+            }
+        }
+    }
+
+    private func normalizeDomain(_ input: String) -> String {
+        var domain = input.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if domain.hasPrefix("https://") { domain = String(domain.dropFirst(8)) }
+        if domain.hasPrefix("http://") { domain = String(domain.dropFirst(7)) }
+        if let slashIndex = domain.firstIndex(of: "/") {
+            domain = String(domain[domain.startIndex..<slashIndex])
+        }
+        if domain.hasPrefix("www.") { domain = String(domain.dropFirst(4)) }
+        return domain
     }
 
     // MARK: - Import / Export Section
